@@ -10,14 +10,13 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import org.json.JSONException;
-import org.thingml.tradfri.LightBulb;
+import org.thingml.tradfri.TradfriLightBulbPacket;
 import org.thingml.tradfri.TradfriConstants;
 import org.thingml.tradfri.TradfriBulbListener;
 
@@ -27,12 +26,14 @@ import org.thingml.tradfri.TradfriBulbListener;
  */
 public class BulbPanel extends javax.swing.JPanel implements TradfriBulbListener {
 
-    protected LightBulb bulb;
+	private static final long serialVersionUID = 1L;
+	
+	protected TradfriLightBulbPacket bulb;
     protected boolean updating = true;
     /**
      * Creates new form BulbPanel
      */
-    public BulbPanel(LightBulb bulb) {
+    public BulbPanel(final TradfriLightBulbPacket bulb) {
         this.bulb = bulb;
         bulb.addLightBulbListner(this);
         initComponents();
@@ -331,7 +332,9 @@ public class BulbPanel extends javax.swing.JPanel implements TradfriBulbListener
         updating = false;
     }
     
-    public void bulb_state_changed(LightBulb bulb) {
-        if (this.bulb == bulb)  updatePanelContent();
+    public void bulbStateChanged(final TradfriLightBulbPacket bulb) {
+        if (this.bulb == bulb) {
+        	updatePanelContent();
+        }
     }
 }

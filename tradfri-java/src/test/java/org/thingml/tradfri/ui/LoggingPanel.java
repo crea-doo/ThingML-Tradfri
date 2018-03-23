@@ -12,6 +12,9 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.text.DefaultCaret;
+
+import org.slf4j.LoggerFactory;
+import org.slf4j.impl.StaticLoggerBinder;
 import org.thingml.tradfri.TradfriGateway;
 
 /**
@@ -20,19 +23,24 @@ import org.thingml.tradfri.TradfriGateway;
  */
 public class LoggingPanel extends javax.swing.JPanel {
 
-    public final int maxLogSize = 2048;
+	private static final long serialVersionUID = 1L;
+	
+	public final int maxLogSize = 2048;
     
     /**
      * Creates new form LoggingPanel
      */
     public LoggingPanel() {
-        Logger.getLogger(TradfriGateway.class.getName()).addHandler(new LoggingPanel.LogHandler());
+        //Logger.getLogger(TradfriGateway.class.getName()).addHandler(new LoggingPanel.LogHandler());
         initComponents();
     }
-    
-    
-    public void appendLog(String text) {
-        jTextArea1.append(text);
+
+    public void appendLog(final String text) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				jTextArea1.append(text);
+			}
+		});
     }
 
     /**
@@ -144,6 +152,7 @@ public class LoggingPanel extends javax.swing.JPanel {
     private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables
 
+    /*
     class LogHandler extends Handler {
         
         StringBuilder b = new StringBuilder();
@@ -175,5 +184,6 @@ public class LoggingPanel extends javax.swing.JPanel {
         }
         
     }
+    */
 
 }

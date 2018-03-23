@@ -1,93 +1,337 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.thingml</groupId>
-  <artifactId>tradfri-java</artifactId>
-  <version>0.9.0-SNAPSHOT</version>
-  <name>IKEA Tradfri Gateway</name>
-  <description>Java Gateway for the IKEA Tradfri smart lighting</description>
-  <organization>
-  	<name>Tellu IoT</name>
-  </organization>
-  
-  <properties>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
-  </properties>
+<?xml version="1.0" encoding="utf-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-  <build>
-        <sourceDirectory>src/main/java</sourceDirectory>
-        <!--<testSourceDirectory>src/test/java</testSourceDirectory>-->
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                    <!--<compilerArguments>-->
-                    <!--<profile>--><!--COMPACT_PROFILE--><!--</profile>-->
-                    <!--</compilerArguments>--><!--For Java8 only-->
-                </configuration>
-            </plugin>
+	<modelVersion>4.0.0</modelVersion>
 
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>java</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <mainClass>org.thingml.tradfri.ui.MainFrame</mainClass>
-                </configuration>
-            </plugin>
-            <!-- PLUGIN-->
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.thingml.tradfri.ui.MainFrame</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <!-- this is used for inheritance merges -->
-                        <phase>package</phase>
-                        <!-- bind to the packaging phase -->
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+	<groupId>org.thingml</groupId>
+	<artifactId>tradfri-java</artifactId>
+	<version>0.9.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>IKEA Tradfri Gateway</name>
+	<description>Java Gateway for the IKEA Tradfri smart lighting</description>
+	<url>https://github.com/ffleurey/ThingML-Tradfri</url>
 
-  <dependencies>
-  	<dependency>
-  		<groupId>org.json</groupId>
-  		<artifactId>org.json</artifactId>
-  		<version>chargebee-1.0</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.eclipse.californium</groupId>
-  		<artifactId>californium-core</artifactId>
-  		<version>2.0.0-M5</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.eclipse.californium</groupId>
-  		<artifactId>scandium</artifactId>
-  		<version>2.0.0-M5</version>
-  	</dependency>
-  </dependencies>
+	<organization>
+		<name>Tellu IoT</name>
+	</organization>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+
+		<!-- Dependency version information -->
+		<californium.version>2.0.0-M8</californium.version>
+		<slf4j.version>1.7.25</slf4j.version>
+	</properties>
+
+	<scm>
+		<url>https://github.com/ffleurey/ThingML-Tradfri</url>
+		<connection>scm:git:https://github.com/ffleurey/ThingML-Tradfri.git</connection>
+		<developerConnection>scm:git:https://github.com/ffleurey/ThingML-Tradfri.git</developerConnection>
+		<tag>master</tag>
+	</scm>
+
+	<dependencies>
+		<!-- JSON -->
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180130</version>
+		</dependency>
+		<!-- /JSON -->
+		<!-- CoAP -->
+		<dependency>
+			<groupId>org.eclipse.californium</groupId>
+			<artifactId>californium-core</artifactId>
+			<version>${californium.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.californium</groupId>
+			<artifactId>scandium</artifactId>
+			<version>${californium.version}</version>
+		</dependency>
+		<!-- /CoAP -->
+		
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+        <!--dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>test</scope>
+        </dependency-->
+        <dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-jdk14</artifactId>
+		    <version>1.7.25</version>
+		    <scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>filter</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>resources</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<!--mainClass>org.thingml.tradfri.ui.MainFrame</mainClass-->
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<!-- this is used for inheritance merges -->
+						<phase>package</phase>
+						<!-- bind to the packaging phase -->
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.6.1</version>
+					<configuration>
+						<source>1.7</source>
+						<target>1.7</target>
+						<encoding>UTF-8</encoding>
+						<showDeprecation>true</showDeprecation>
+						<showWarnings>true</showWarnings>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-install-plugin</artifactId>
+					<version>2.5.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>2.8.2</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>3.0.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.0.2</version>
+					<configuration>
+						<escapeString>\</escapeString>
+						<overwrite>true</overwrite>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>3.0.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-bundle-plugin</artifactId>
+					<version>3.3.0</version>
+					<extensions>true</extensions>
+					<configuration>
+						<instructions>
+							<_removeheaders>
+								Include-Resource,
+								Bnd-LastModified,
+								Built-By,
+								Tool,
+								Created-By,
+								Build-Jdk,
+								Import-Service,
+								Export-Service
+							</_removeheaders>
+						</instructions>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>versions-maven-plugin</artifactId>
+					<version>2.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-eclipse-plugin</artifactId>
+					<version>2.10</version>
+					<configuration>
+						<!-- show also pom project in eclipse -->
+						<!-- Workaround for http://jira.codehaus.org/browse/MECLIPSE-94 -->
+						<!-- <eclipseProjectDir>..</eclipseProjectDir> -->
+						<addGroupIdToProjectName>true</addGroupIdToProjectName>
+						<!--<pde>false</pde>-->
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>build-helper-maven-plugin</artifactId>
+					<version>3.0.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>3.0.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.0.2</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+
+
+	<profiles>
+		<profile>
+			<id>ui</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>exec-maven-plugin</artifactId>
+						<version>1.6.0</version>
+						<executions>
+							<execution>
+								<id>ui</id>
+								<phase>test</phase>
+								<goals>
+									<goal>java</goal>
+								</goals>
+								<configuration>
+									<classpathScope>test</classpathScope>
+									<includeProjectDependencies>true</includeProjectDependencies>
+									<includePluginDependencies>true</includePluginDependencies>
+									<mainClass>org.thingml.tradfri.ui.MainFrame</mainClass>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>release</id>
+			<distributionManagement>
+				<snapshotRepository>
+					<id>ossrh</id>
+					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+				</snapshotRepository>
+				<repository>
+					<id>ossrh</id>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+				</repository>
+			</distributionManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-release-plugin</artifactId>
+						<version>2.5.3</version>
+						<configuration>
+							<autoVersionSubmodules>true</autoVersionSubmodules>
+							<useReleaseProfile>false</useReleaseProfile>
+							<releaseProfiles>release</releaseProfiles>
+							<goals>deploy</goals>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.sonatype.plugins</groupId>
+						<artifactId>nexus-staging-maven-plugin</artifactId>
+						<version>1.6.6</version>
+						<extensions>true</extensions>
+						<configuration>
+							<serverId>ossrh</serverId>
+							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+							<autoReleaseAfterClose>true</autoReleaseAfterClose>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>2.4</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.10.3</version>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
