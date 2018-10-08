@@ -1,19 +1,25 @@
-package org.thingml.tradfri;
+package org.thingml.tradfri.packet;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.eclipse.californium.core.CoapResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.thingml.tradfri.TradfriConstants;
+import org.thingml.tradfri.TradfriGateway;
 
-public abstract class TradfriHardwarePacket extends TradfriPacket {
+public abstract class TradfriHardwarePacket<T> extends TradfriPacket {
 
 	/**
 	 * Logger to be used for all console outputs, errors and exceptions
 	 */
 	private static final Logger log = LoggerFactory.getLogger(TradfriHardwarePacket.class);
+
+	protected final List<T> listeners = new ArrayList<T>();
 
 	private TradfriGateway gateway;
 	
@@ -47,6 +53,20 @@ public abstract class TradfriHardwarePacket extends TradfriPacket {
 		if (response != null) {
 			parseResponseBase(response);
 		}
+	}
+
+	public abstract void update() throws JSONException;
+
+	public void addListener(final T l) {
+		listeners.add(l);
+	}
+
+	public void removeListener(final T l) {
+		listeners.remove(l);
+	}
+
+	public void clearListeners() {
+		listeners.clear();
 	}
 
 	protected TradfriGateway getGateway() {
@@ -85,7 +105,7 @@ public abstract class TradfriHardwarePacket extends TradfriPacket {
 		return jsonObject;
 	}
 
-	public void sendJSONPayload(final String json) {
+	public void sendJSONPayload(String json) {
 		gateway.set(TradfriConstants.DEVICES + "/" + this.getId(), json);
 	}
 
@@ -109,7 +129,7 @@ public abstract class TradfriHardwarePacket extends TradfriPacket {
 			type = json.getJSONObject("3").getString("1");
 			firmware = json.getJSONObject("3").getString("3");
 		} catch (JSONException e) {
-			log.error("Cannot update bulb info: error parsing the response from the gateway", e);
+			log.error("Cannot update device info: error parsing the response from the gateway", e);
 		}
 		
 		return updateListeners;

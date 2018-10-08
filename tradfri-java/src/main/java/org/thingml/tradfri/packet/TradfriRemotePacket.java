@@ -1,17 +1,13 @@
-package org.thingml.tradfri;
+package org.thingml.tradfri.packet;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.eclipse.californium.core.CoapResponse;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.thingml.tradfri.TradfriConstants;
+import org.thingml.tradfri.TradfriGateway;
+import org.thingml.tradfri.listener.TradfriRemoteListener;
 
-public class TradfriRemotePacket extends TradfriHardwarePacket {
-
-	/**
-	 * Logger to be used for all console outputs, errors and exceptions
-	 */
-	private static final Logger log = LoggerFactory.getLogger(TradfriRemotePacket.class);
+public class TradfriRemotePacket extends TradfriHardwarePacket<TradfriRemoteListener> {
 
 	// Status
 	private boolean online;
@@ -28,24 +24,29 @@ public class TradfriRemotePacket extends TradfriHardwarePacket {
 		return online;
 	}
 
-	protected void updateBulb() {
+	@Override
+	public void update() throws JSONException {
 		CoapResponse response = getGateway().get(TradfriConstants.DEVICES + "/" + getId());
-		if (response != null)
-			parseResponse(response);
-	}
-
-	protected void parseResponse(final CoapResponse response) {
-		boolean updateListeners = super.parseResponseBase(response);
-		
-		try {
-			JSONObject json = new JSONObject(response.getResponseText());
+		if (response != null) {
+			boolean updateListeners = super.parseResponseBase(response);
+			
+			final JSONObject json = new JSONObject(response.getResponseText());
 
 			boolean new_online = json.getInt(TradfriConstants.DEVICE_REACHABLE) != 0;
 			if (new_online != online)
 				updateListeners = true;
 			online = new_online;
-		} catch (JSONException e) {
-			log.error("Cannot update bulb info: error parsing the response from the gateway", e);
+			
+			if (updateListeners) {
+				// Notify all listeners
+				for (TradfriRemoteListener listener : listeners) {
+					try {
+						listener.remoteStateChanged(this);
+					} catch (Exception ex) {
+						//
+					}
+				}
+			}
 		}
 	}
 

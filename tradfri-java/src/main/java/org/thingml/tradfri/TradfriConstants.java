@@ -14,6 +14,8 @@ public class TradfriConstants {
 	// Device types (contained in INSTANCE_ID = "9003" inside of array contained in LIGHT = "3311")
 	public static final int TYPE_REMOTE = 0;
 	public static final int TYPE_BULB = 2;
+	public static final int TYPE_CONTROL_OUTLET = 3;
+	public static final int TYPE_MOTION = 4;
 	// The others need to be figured out by people who own these
 
 	// Top level navigation
@@ -32,6 +34,7 @@ public class TradfriConstants {
 	public static final String HS_ACCESSORY_LINK = "9018"; // Groups have this entry
 	public static final String IKEA_MOODS = "9068"; // Moods have this entry
 	public static final String LIGHT = "3311"; // urn:oma:lwm2m:ext:3311 in LwM2M registry
+	public static final String CONTROL = "3312"; // urn:oma:lwm2m:ext:3312 in LwM2M registry
 	public static final String TYPE = "5750"; // "Application Type" in LwM2M registry
 	public static final String ONOFF = "5850"; // "On/Off" in LwM2M registry
 	public static final String DIMMER = "5851"; // "Dimmer" in LwM2M registry

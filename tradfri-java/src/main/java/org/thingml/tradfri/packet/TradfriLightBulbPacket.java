@@ -1,7 +1,4 @@
-package org.thingml.tradfri;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.thingml.tradfri.packet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,20 +6,21 @@ import org.eclipse.californium.core.CoapResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.thingml.tradfri.TradfriConstants;
+import org.thingml.tradfri.TradfriGateway;
+import org.thingml.tradfri.listener.TradfriLightBulbListener;
 
-public class TradfriLightBulbPacket extends TradfriHardwarePacket {
+public class TradfriLightBulbPacket extends TradfriHardwarePacket<TradfriLightBulbListener> {
 
 	/**
 	 * Logger to be used for all console outputs, errors and exceptions
 	 */
 	private static final Logger log = LoggerFactory.getLogger(TradfriLightBulbPacket.class);
 
-	private final List<TradfriBulbListener> listeners = new ArrayList<TradfriBulbListener>();
-
 	// Status
 	private boolean online;
 
-	// State of the bulb
+	// State of the light bulb
 	private boolean on;
 	private int intensity;
 	private String color;
@@ -33,18 +31,6 @@ public class TradfriLightBulbPacket extends TradfriHardwarePacket {
 
 	public TradfriLightBulbPacket(final int id, final TradfriGateway gateway, final CoapResponse response) {
 		super(PACKET_TYPE_LIGHT_BULB, id, gateway, response);
-	}
-
-	public void addLightBulbListner(final TradfriBulbListener l) {
-		listeners.add(l);
-	}
-
-	public void removeLightBulbListner(final TradfriBulbListener l) {
-		listeners.remove(l);
-	}
-
-	public void clearLightBulbListners() {
-		listeners.clear();
 	}
 
 	public boolean isOnline() {
@@ -158,28 +144,23 @@ public class TradfriLightBulbPacket extends TradfriHardwarePacket {
 		this.color = color;
 	}
 
-	protected void updateBulb() {
-		CoapResponse response = getGateway().get(TradfriConstants.DEVICES + "/" + getId());
+	@Override
+	public void update() throws JSONException {
+		final CoapResponse response = getGateway().get(TradfriConstants.DEVICES + "/" + getId());
 		if (response != null) {
-			parseResponse(response);
-		}
-	}
+			boolean updateListeners = super.parseResponseBase(response);
+			
+			final JSONObject json = new JSONObject(response.getResponseText());
 
-	protected void parseResponse(final CoapResponse response) {
-		boolean updateListeners = super.parseResponseBase(response);
-		
-		try {
-			JSONObject json = new JSONObject(response.getResponseText());
-
-			boolean new_online = json.getInt(TradfriConstants.DEVICE_REACHABLE) != 0;
+			final boolean new_online = json.getInt(TradfriConstants.DEVICE_REACHABLE) != 0;
 			if (new_online != online)
 				updateListeners = true;
 			online = new_online;
 
 			final JSONObject light = json.getJSONArray(TradfriConstants.LIGHT).getJSONObject(0);
 			if (light.has(TradfriConstants.ONOFF) && light.has(TradfriConstants.DIMMER)) {
-				boolean new_on = (light.getInt(TradfriConstants.ONOFF) != 0);
-				int new_intensity = light.getInt(TradfriConstants.DIMMER);
+				final boolean new_on = (light.getInt(TradfriConstants.ONOFF) != 0);
+				final int new_intensity = light.getInt(TradfriConstants.DIMMER);
 				if (on != new_on)
 					updateListeners = true;
 				if (intensity != new_intensity)
@@ -197,24 +178,22 @@ public class TradfriLightBulbPacket extends TradfriHardwarePacket {
 					updateListeners = true;
 				color = new_color;
 			}
-		} catch (JSONException e) {
-			log.error("Cannot update bulb info: error parsing the response from the gateway", e);
-		}
-		
-		if (updateListeners) {
-			// Notify all listeners
-			for (TradfriBulbListener listener : listeners) {
-				try {
-					listener.bulbStateChanged(this);
-				} catch (Exception ex) {
-					//
+			
+			if (updateListeners) {
+				// Notify all listeners
+				for (TradfriLightBulbListener listener : listeners) {
+					try {
+						listener.bulbStateChanged(this);
+					} catch (Exception ex) {
+						//
+					}
 				}
 			}
 		}
 	}
 
 	public String toString() {
-		String result = "[BULB " + getId() + "]";
+		String result = "[LIGHT_BULB " + getId() + "]";
 		if (online)
 			result += "\ton:" + on + "\tdim:" + intensity + "\tcolor:" + color;
 		else

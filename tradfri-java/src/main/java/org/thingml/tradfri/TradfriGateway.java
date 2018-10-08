@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
@@ -15,8 +17,9 @@ import org.eclipse.californium.scandium.dtls.pskstore.StaticPskStore;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.thingml.tradfri.listener.TradfriGatewayListener;
+import org.thingml.tradfri.packet.TradfriControlOutletPacket;
+import org.thingml.tradfri.packet.TradfriLightBulbPacket;
 
 public class TradfriGateway implements Runnable {
 
@@ -33,7 +36,12 @@ public class TradfriGateway implements Runnable {
 	/**
 	 * Collection of bulbs registered on the gateway
 	 */
-	private final List<TradfriLightBulbPacket> bulbs = new ArrayList<TradfriLightBulbPacket>();
+	private final List<TradfriLightBulbPacket> lightBulbs = new ArrayList<TradfriLightBulbPacket>();
+	
+	/**
+	 * Collection of motion sensors registered on the gateway
+	 */
+	private final List<TradfriControlOutletPacket> controlOutlets = new ArrayList<TradfriControlOutletPacket>();
 
 	/**
 	 * COAPS helpers to GET and SET on the IKEA Tradfri gateway using Californium
@@ -123,8 +131,12 @@ public class TradfriGateway implements Runnable {
 			this.pollingRate = pollingRate;
 	}
 	
-	public List<TradfriLightBulbPacket> getBulbs() {
-		return bulbs;
+	public List<TradfriLightBulbPacket> getLightBulbs() {
+		return this.lightBulbs;
+	}
+	
+	public List<TradfriControlOutletPacket> getControlOutlets() {
+		return this.controlOutlets;
 	}
 
 	private final AtomicBoolean running = new AtomicBoolean(false);
@@ -161,6 +173,10 @@ public class TradfriGateway implements Runnable {
 		cancel.set(true);
 	}
 
+	private final int getDevicesCount() {
+		return lightBulbs.size() + controlOutlets.size();
+	}
+	
 	public void run() {
 		// Notify all listeners
 		for (TradfriGatewayListener listener : listeners) {
@@ -175,13 +191,13 @@ public class TradfriGateway implements Runnable {
 		initCoap();
 		log.debug("Discovering devices...");
 		if (dicoverDevices()) {
-			log.debug("Discovered " + bulbs.size() + " bulbs.");
+			log.debug("Discovered " + getDevicesCount() + " devices.");
 			for (TradfriGatewayListener l : listeners)
 				l.gatewayStarted(this);
 			try {
 				while (!cancel.get()) {
 					Thread.sleep(getPollingRate());
-					log.debug("Polling bulbs status...");
+					log.debug("Polling device status...");
 
 					// Notify all listeners
 					for (TradfriGatewayListener listener : listeners) {
@@ -192,16 +208,35 @@ public class TradfriGateway implements Runnable {
 						}
 					}
 
+					// Time measurement
 					long before = System.currentTimeMillis();
-					for (TradfriLightBulbPacket bulb : bulbs) {
-						bulb.updateBulb();
+					
+					// Light bulbs
+					for (TradfriLightBulbPacket bulb : lightBulbs) {
+						try {
+							bulb.update();
+						} catch (JSONException ex) {
+							log.error("Cannot update light bulb info: error parsing the response from the gateway", ex);
+						}
 					}
+
+					// Control Outlets
+					for (TradfriControlOutletPacket controlOutlet : controlOutlets) {
+						try {
+							controlOutlet.update();
+						} catch (JSONException e) {
+							log.error("Cannot update control outlet info: error parsing the response from the gateway", e);
+						}
+					}
+					
+					// Time measurement
 					long after = System.currentTimeMillis();
+					
 
 					// Notify all listeners
 					for (TradfriGatewayListener listener : listeners) {
 						try {
-							listener.pollingCompleted(this, bulbs.size(), (int) (after - before));
+							listener.pollingCompleted(this, getDevicesCount(), (int) (after - before));
 						} catch (Exception ex) {
 							//
 						}
@@ -228,7 +263,9 @@ public class TradfriGateway implements Runnable {
 	}
 
 	protected boolean dicoverDevices() {
-		bulbs.clear();
+		lightBulbs.clear();
+		controlOutlets.clear();
+		
 		try {
 			final CoapResponse responsedevices = get(TradfriConstants.DEVICES);
 			if (responsedevices == null) {
@@ -239,7 +276,8 @@ public class TradfriGateway implements Runnable {
 			// Notify all listeners
 			for (TradfriGatewayListener listener : listeners) {
 				try {
-					listener.bulbDiscoveryStarted(this, devices.length());
+					listener.lightBulbDiscoveryStarted(this, devices.length());
+					listener.controlOutletDiscoveryStarted(this, devices.length());
 				} catch (Exception ex) {
 					//
 				}
@@ -251,18 +289,36 @@ public class TradfriGateway implements Runnable {
 					final JSONObject json = new JSONObject(responseDevice.getResponseText());
 					if (json.has(TradfriConstants.TYPE) && json.getInt(TradfriConstants.TYPE) == TradfriConstants.TYPE_BULB) {
 						final TradfriLightBulbPacket b = new TradfriLightBulbPacket(json.getInt(TradfriConstants.INSTANCE_ID), this, responseDevice);
-						bulbs.add(b);
+						lightBulbs.add(b);
 						
 						// Notify all listeners
 						for (TradfriGatewayListener listener : listeners) {
 							try {
-								listener.bulbDiscovered(this, b);
+								listener.lightBulbDiscovered(this, b);
 							} catch (Exception ex) {
 								//
 							}
 						}
 					} else if (json.has(TradfriConstants.TYPE) && json.getInt(TradfriConstants.TYPE) == TradfriConstants.TYPE_REMOTE) {
 						log.debug("REMOTE FOUND: " + json);
+					} else if (json.has(TradfriConstants.TYPE) && json.getInt(TradfriConstants.TYPE) == TradfriConstants.TYPE_CONTROL_OUTLET) {
+						log.debug("CONTROL OUTLET FOUND: " + json);
+						
+						final TradfriControlOutletPacket b = new TradfriControlOutletPacket(json.getInt(TradfriConstants.INSTANCE_ID), this, responseDevice);
+						controlOutlets.add(b);
+						
+						// Notify all listeners
+						for (TradfriGatewayListener listener : listeners) {
+							try {
+								listener.controlOutletDiscovered(this, b);
+							} catch (Exception ex) {
+								//
+							}
+						}
+					} else if (json.has(TradfriConstants.TYPE) && json.getInt(TradfriConstants.TYPE) == TradfriConstants.TYPE_MOTION) {
+						log.debug("MOTION FOUND: " + json);
+					} else {
+						log.debug("UnKNOWN TYPE: " + json);
 					}
 				}
 
@@ -271,7 +327,8 @@ public class TradfriGateway implements Runnable {
 			// Notify all listeners
 			for (TradfriGatewayListener listener : listeners) {
 				try {
-					listener.bulbDiscoveryCompleted(this);
+					listener.lightBulbDiscoveryCompleted(this);
+					listener.controlOutletDiscoveryCompleted(this);
 				} catch (Exception ex) {
 					//
 				}
@@ -290,7 +347,7 @@ public class TradfriGateway implements Runnable {
 		coap = new CoapEndpoint(new DTLSConnector(builder.build()), networkConfig);
 	}
 
-	protected CoapResponse get(final String path) {
+	public CoapResponse get(final String path) {
 		//log.debug("GET: " + "coaps://" + gatewayIp + "/" + path);
 		final CoapClient client = new CoapClient("coaps://" + gatewayIp + "/" + path);
 		client.setEndpoint(coap);
@@ -301,7 +358,7 @@ public class TradfriGateway implements Runnable {
 		return response;
 	}
 
-	protected void set(final String path, final String payload) {
+	public void set(final String path, final String payload) {
 		log.debug("SET: " + "coaps://" + gatewayIp + "/" + path + " = " + payload);
 		final CoapClient client = new CoapClient("coaps://" + gatewayIp + "/" + path);
 		client.setEndpoint(coap);
