@@ -1,9 +1,13 @@
 package org.thingml.tradfri.ui;
 
 import java.util.prefs.Preferences;
-import org.thingml.tradfri.TradfriLightBulbPacket;
+
+import org.thingml.tradfri.packet.TradfriControlOutletPacket;
+import org.thingml.tradfri.packet.TradfriLightBulbPacket;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.thingml.tradfri.TradfriGateway;
-import org.thingml.tradfri.TradfriGatewayListener;
+import org.thingml.tradfri.listener.TradfriGatewayListener;
 
 /**
  *
@@ -13,7 +17,11 @@ public class MainFrame extends javax.swing.JFrame implements TradfriGatewayListe
 
 	private static final long serialVersionUID = 1L;
 	
+	private static Logger log = LogManager.getLogger(MainFrame.class);
+	
 	private static MainFrame instance = null;
+	
+	private TradfriGateway gateway = new TradfriGateway();
 	
 	final Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
     
@@ -26,23 +34,13 @@ public class MainFrame extends javax.swing.JFrame implements TradfriGatewayListe
         initComponents();
         jTextFieldIP.setText(prefs.get("TradfriGatewayIP", "10.3.1.85"));         //192.168.1.13
         jTextFieldIP.setText(prefs.get("TradfriGatewayIP", "192.168.1.13"));         //
-       // jTextFieldKey.setText(prefs.get("TradfriGatewayKey", "kQxkI7S6Ao4rgwYC")); // 5HV7ibb4brgWL18x
+        //jTextFieldKey.setText(prefs.get("TradfriGatewayKey", "kQxkI7S6Ao4rgwYC")); // 5HV7ibb4brgWL18x
         jTextFieldKey.setText(prefs.get("TradfriGatewayKey", "5HV7ibb4brgWL18x")); // 5HV7ibb4brgWL18x
         jTextFieldPRate.setText(prefs.get("TradfriGatewayPollRate", "5000"));         //
         gateway.addListener(this);
         jButtonStop.setEnabled(false);
-    }
-    
-    public static void log(String text) {
-    	if (instance != null) {
-    		instance.appendLog(text);
-    	}
-    }
-    
-    private void appendLog(String text) {
-    	if (loggingPanel1 != null) {
-    		loggingPanel1.appendLog(text);
-    	}
+        
+        log.warn("Started");
     }
 
     /**
@@ -192,8 +190,7 @@ public class MainFrame extends javax.swing.JFrame implements TradfriGatewayListe
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-       TradfriGateway gateway = new TradfriGateway();
-    
+   
     private void jButtonConnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonConnectActionPerformed
         gateway.setGatewayIp(jTextFieldIP.getText());
         gateway.setSecurityKey(jTextFieldKey.getText());
@@ -258,16 +255,26 @@ public class MainFrame extends javax.swing.JFrame implements TradfriGatewayListe
     }
 
     @Override
-    public void bulbDiscoveryStarted(final TradfriGateway gateway, final int totalDevices) {
+    public void pollingStarted(final TradfriGateway gateway) {
+        //
+    }
+
+    @Override
+    public void pollingCompleted(final TradfriGateway gateway, final int bulbCount, final int totalTime) {
+        //
+    }
+
+    @Override
+    public void lightBulbDiscoveryStarted(final TradfriGateway gateway, final int totalDevices) {
         jProgressBarDiscover.setMaximum(totalDevices);
         jProgressBarDiscover.setValue(1);
     }
 
     @Override
-    public void bulbDiscovered(final TradfriGateway gateway, final TradfriLightBulbPacket bulb) {
+    public void lightBulbDiscovered(final TradfriGateway gateway, final TradfriLightBulbPacket lightBulb) {
 		jProgressBarDiscover.setValue(jProgressBarDiscover.getValue() + 1);
-		if (bulb.isOnline() || !jCheckBoxShowOnlyOnline.isSelected()) {
-			final BulbPanel p = new BulbPanel(bulb);
+		if (lightBulb.isOnline() || !jCheckBoxShowOnlyOnline.isSelected()) {
+			final BulbPanel p = new BulbPanel(lightBulb);
 			jPanelBulbs.add(p);
 			jPanelBulbs.revalidate();
 			jPanelBulbs.repaint();
@@ -275,9 +282,24 @@ public class MainFrame extends javax.swing.JFrame implements TradfriGatewayListe
     }
 
     @Override
-    public void bulbDiscoveryCompleted(final TradfriGateway gateway) {
+    public void lightBulbDiscoveryCompleted(final TradfriGateway gateway) {
         //
     }
+
+	@Override
+	public void controlOutletDiscoveryStarted(final TradfriGateway gateway, final int totalDevices) {
+		//
+	}
+
+	@Override
+	public void controlOutletDiscovered(final TradfriGateway gateway, final TradfriControlOutletPacket controlOutlet) {
+		//
+	}
+
+	@Override
+	public void controlOutletDiscoveryCompleted(final TradfriGateway gateway) {
+		//
+	}
 
     @Override
     public void gatewayStarted(final TradfriGateway gateway) {
@@ -296,13 +318,4 @@ public class MainFrame extends javax.swing.JFrame implements TradfriGatewayListe
         jPanelBulbs.repaint();
     }
 
-    @Override
-    public void pollingStarted(final TradfriGateway gateway) {
-        //
-    }
-
-    @Override
-    public void pollingCompleted(final TradfriGateway gateway, final int bulbCount, final int totalTime) {
-        //
-    }
 }

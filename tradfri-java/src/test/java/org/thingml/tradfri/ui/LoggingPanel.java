@@ -5,17 +5,21 @@
  */
 package org.thingml.tradfri.ui;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
+import java.awt.Font;
+import java.nio.charset.StandardCharsets;
+
 import javax.swing.SwingUtilities;
 import javax.swing.text.DefaultCaret;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.impl.StaticLoggerBinder;
-import org.thingml.tradfri.TradfriGateway;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.thingml.tradfri.ui.log4j.JTextAreaAppender;
 
 /**
  *
@@ -31,8 +35,38 @@ public class LoggingPanel extends javax.swing.JPanel {
      * Creates new form LoggingPanel
      */
     public LoggingPanel() {
-        //Logger.getLogger(TradfriGateway.class.getName()).addHandler(new LoggingPanel.LogHandler());
         initComponents();
+        
+        // Create logging panel
+        jTextArea1.setLineWrap(true);
+        jTextArea1.setWrapStyleWord(true);
+        jTextArea1.setEditable (false);
+        jTextArea1.setFont(new Font("Courier", Font.PLAIN, 12));
+        
+        jCheckBoxAutoScroll.setSelected(true);
+        jCheckBoxLineWrap.setSelected(true);
+        
+        // Subscribe the text area to JTextAreaAppender
+        JTextAreaAppender.addTextArea(jTextArea1);
+        
+        // Register log appender
+        final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        final Configuration config = ctx.getConfiguration();
+        
+        final Layout layout = PatternLayout.newBuilder()
+        		.withConfiguration(config)
+        		.withPattern(PatternLayout.SIMPLE_CONVERSION_PATTERN)
+        		.withCharset(StandardCharsets.UTF_8)
+        		.build();
+        final Appender appender = JTextAreaAppender.createAppender("logging-panel", 4000, false, layout, null);
+        appender.start();
+        
+        config.addAppender(appender);
+        
+        for (LoggerConfig loggerConfig : config.getLoggers().values()) {
+        	loggerConfig.addAppender(appender, Level.INFO, null);
+        }
+        ctx.updateLoggers();
     }
 
     public void appendLog(final String text) {
@@ -54,9 +88,9 @@ public class LoggingPanel extends javax.swing.JPanel {
 
         jScrollPaneLog = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
-        jCheckBoxLog = new javax.swing.JCheckBox();
+        jCheckBoxAutoScroll = new javax.swing.JCheckBox();
         jButtonClear = new javax.swing.JButton();
-        jCheckBox1 = new javax.swing.JCheckBox();
+        jCheckBoxLineWrap = new javax.swing.JCheckBox();
 
         jTextArea1.setEditable(false);
         jTextArea1.setBackground(new java.awt.Color(51, 51, 51));
@@ -71,9 +105,9 @@ public class LoggingPanel extends javax.swing.JPanel {
         });
         jScrollPaneLog.setViewportView(jTextArea1);
 
-        jCheckBoxLog.setSelected(true);
-        jCheckBoxLog.setText("Auto Scroll");
-        jCheckBoxLog.addActionListener(new java.awt.event.ActionListener() {
+        jCheckBoxAutoScroll.setSelected(true);
+        jCheckBoxAutoScroll.setText("Auto Scroll");
+        jCheckBoxAutoScroll.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBoxLogActionPerformed(evt);
             }
@@ -86,8 +120,8 @@ public class LoggingPanel extends javax.swing.JPanel {
             }
         });
 
-        jCheckBox1.setText("Line Wrap");
-        jCheckBox1.addActionListener(new java.awt.event.ActionListener() {
+        jCheckBoxLineWrap.setText("Line Wrap");
+        jCheckBoxLineWrap.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jCheckBox1ActionPerformed(evt);
             }
@@ -102,9 +136,9 @@ public class LoggingPanel extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(jButtonClear)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 250, Short.MAX_VALUE)
-                .addComponent(jCheckBox1)
+                .addComponent(jCheckBoxLineWrap)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jCheckBoxLog)
+                .addComponent(jCheckBoxAutoScroll)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -113,9 +147,9 @@ public class LoggingPanel extends javax.swing.JPanel {
                 .addComponent(jScrollPaneLog, javax.swing.GroupLayout.DEFAULT_SIZE, 162, Short.MAX_VALUE)
                 .addGap(7, 7, 7)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jCheckBoxLog)
+                    .addComponent(jCheckBoxAutoScroll)
                     .addComponent(jButtonClear)
-                    .addComponent(jCheckBox1))
+                    .addComponent(jCheckBoxLineWrap))
                 .addGap(5, 5, 5))
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -126,7 +160,7 @@ public class LoggingPanel extends javax.swing.JPanel {
 
     private void jCheckBoxLogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxLogActionPerformed
         DefaultCaret caret = (DefaultCaret) jTextArea1.getCaret();
-        if (jCheckBoxLog.isSelected()) { 
+        if (jCheckBoxAutoScroll.isSelected()) { 
            caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
            jTextArea1.setCaretPosition(jTextArea1.getDocument().getLength());
            jScrollPaneLog.setViewportView(jTextArea1);
@@ -136,18 +170,18 @@ public class LoggingPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_jCheckBoxLogActionPerformed
 
     private void jCheckBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBox1ActionPerformed
-        jTextArea1.setLineWrap(jCheckBox1.isSelected());
+        jTextArea1.setLineWrap(jCheckBoxLineWrap.isSelected());
     }//GEN-LAST:event_jCheckBox1ActionPerformed
 
     private void jTextArea1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTextArea1MouseClicked
-        jCheckBoxLog.setSelected(false);
+        jCheckBoxAutoScroll.setSelected(false);
     }//GEN-LAST:event_jTextArea1MouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonClear;
-    private javax.swing.JCheckBox jCheckBox1;
-    private javax.swing.JCheckBox jCheckBoxLog;
+    private javax.swing.JCheckBox jCheckBoxLineWrap;
+    private javax.swing.JCheckBox jCheckBoxAutoScroll;
     private javax.swing.JScrollPane jScrollPaneLog;
     private javax.swing.JTextArea jTextArea1;
     // End of variables declaration//GEN-END:variables

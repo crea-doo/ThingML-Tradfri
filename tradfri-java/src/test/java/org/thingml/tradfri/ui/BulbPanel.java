@@ -16,15 +16,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import org.json.JSONException;
-import org.thingml.tradfri.TradfriLightBulbPacket;
+import org.thingml.tradfri.packet.TradfriLightBulbPacket;
+import org.thingml.tradfri.listener.TradfriLightBulbListener;
 import org.thingml.tradfri.TradfriConstants;
-import org.thingml.tradfri.TradfriBulbListener;
 
 /**
  *
  * @author franck
  */
-public class BulbPanel extends javax.swing.JPanel implements TradfriBulbListener {
+public class BulbPanel extends javax.swing.JPanel implements TradfriLightBulbListener {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -35,7 +35,7 @@ public class BulbPanel extends javax.swing.JPanel implements TradfriBulbListener
      */
     public BulbPanel(final TradfriLightBulbPacket bulb) {
         this.bulb = bulb;
-        bulb.addLightBulbListner(this);
+        bulb.addListener(this);
         initComponents();
         updatePanelContent();
     }
